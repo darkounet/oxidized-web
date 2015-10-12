@@ -1,8 +1,8 @@
 require 'sinatra/base'
 require 'sinatra/json'
 require 'sinatra/url_for'
-require 'haml'
-require 'sass'
+require 'tilt/haml'
+require 'tilt/sass'
 require 'pp'
 require 'oxidized/web/mig'
 module Oxidized
@@ -146,7 +146,7 @@ module Oxidized
       end
 
       #show the lists of versions for a node
-      get '/node/version' do
+      get '/node/version.?:format?' do
         @data = nil
         @group = nil
         @node = nil
@@ -164,7 +164,7 @@ module Oxidized
       end
 
       #show the blob of a version
-      get '/node/version/view' do
+      get '/node/version/view.?:format?' do
         node, @json = route_parse :node
         @info = {:node => node, :group => params[:group],:oid => params[:oid],:date => params[:date],:num => params[:num]}
         @data = nodes.get_version node, @info[:group], @info[:oid]
@@ -217,8 +217,12 @@ module Oxidized
 
       def out template=:default
         if @json or params[:format] == 'json'
-          json @data
-        elsif template == :text
+          if @data.is_a?(String)
+            json @data.lines
+          else
+            json @data
+          end
+        elsif template == :text or params[:format] == 'text'
           content_type :text
           @data
         else
@@ -304,7 +308,7 @@ module Oxidized
             length_o += 1
           end
         end
-        both_diff = {:old_diff => old_diff, :new_diff => new_diff}
+        {:old_diff => old_diff, :new_diff => new_diff}
       end
     end
   end
